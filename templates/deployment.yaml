@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "oidc-gateway.fullname" . }}
+  labels:
+    app: {{ .Values.app }}
+    type: {{ template "oidc-gateway.name" . }}
+    chart: {{ template "oidc-gateway.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  # Currently limited to one replica due to using NGINX local cache
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.app }}
+      type: {{ template "oidc-gateway.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.app }}
+        type: {{ template "oidc-gateway.name" . }}
+        release: {{ .Release.Name }}
+    spec:
+      volumes:
+        - name: config
+          configMap:
+            name: {{ .Values.config.configMap }}
+        - name: secrets
+          secret:
+            secretName: {{ .Values.config.secret }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /app/config.yaml
+              subPath: config.yaml
+              name: config
+            - mountPath: /app/secrets.yaml
+              subPath: secrets.yaml
+              name: secrets
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+    {{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+    {{- end }}

@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "oidc-gateway.fullname" . }}
+  labels:
+    app: {{ .Values.app }}
+    type: {{ template "oidc-gateway.name" . }}
+    chart: {{ template "oidc-gateway.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: {{ .Values.app }}
+    type: {{ template "oidc-gateway.name" . }}
+    release: {{ .Release.Name }}
